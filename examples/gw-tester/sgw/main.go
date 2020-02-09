@@ -32,7 +32,11 @@ func main() {
 	defer sgw.close()
 
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(sigCh,
+		syscall.SIGINT,
+		syscall.SIGQUIT,
+		syscall.SIGTERM,
+		syscall.SIGHUP)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

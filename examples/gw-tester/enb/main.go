@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -31,7 +32,11 @@ func main() {
 	defer enb.close()
 
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(sigCh,
+		syscall.SIGINT,
+		syscall.SIGQUIT,
+		syscall.SIGTERM,
+		syscall.SIGHUP)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -47,7 +52,14 @@ func main() {
 		select {
 		case sig := <-sigCh:
 			switch sig {
+			// kill -SIGINT XXXX or Ctrl+c
 			case syscall.SIGINT:
+				fallthrough
+			// kill -SIGTERM XXXX
+			case syscall.SIGTERM:
+				fallthrough
+			// kill -SIGQUIT XXXX
+			case syscall.SIGQUIT:
 				return
 			case syscall.SIGHUP:
 				// reload config and attach/detach subscribers again
@@ -59,6 +71,9 @@ func main() {
 				if err := enb.reload(newCfg); err != nil {
 					log.Printf("Error applying reloaded config %s", err)
 				}
+			default:
+				fmt.Println("Unknown signal.")
+				return
 			}
 		case err := <-enb.errCh:
 			log.Printf("WARN: %s", err)

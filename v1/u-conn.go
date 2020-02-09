@@ -275,11 +275,13 @@ func (u *UPlaneConn) Close() error {
 	close(u.closeCh)
 
 	if u.kernGTPEnabled {
+		logf("LinkDel %v", u.GTPLink)
 		if err := netlink.LinkDel(u.GTPLink); err != nil {
 			logf("error deleting GTPLink: %s", err)
 		}
 	}
 
+	logf("pktConn.Close %v", u.pktConn)
 	if err := u.pktConn.Close(); err != nil {
 		logf("error closing the underlying conn: %s", err)
 	}

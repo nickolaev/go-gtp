@@ -180,6 +180,7 @@ func (s *sgw) run(ctx context.Context) error {
 }
 
 func (s *sgw) close() error {
+	log.Printf("Closing SGW")
 	var errs []error
 	for _, r := range s.addedRoutes {
 		if err := netlink.RouteDel(r); err != nil {

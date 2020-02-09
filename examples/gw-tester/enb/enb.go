@@ -92,12 +92,16 @@ func newENB(cfg *Config) (*enb, error) {
 
 func (e *enb) run(ctx context.Context) error {
 	// TODO: bind local address(cfg.LocalAddrs.S1CIP) with WithDialer option?
-	conn, err := grpc.Dial(e.mmeAddr.String(), grpc.WithInsecure())
-	if err != nil {
-		return err
+	for {
+		conn, err := grpc.Dial(e.mmeAddr.String(), grpc.WithInsecure())
+		if err == nil {
+			e.s1mmeClient = s1mme.NewAttacherClient(conn)
+			log.Printf("Established S1-MME connection with %s", e.mmeAddr)
+			break
+		}
+		time.Sleep(1 * time.Second)
+		log.Printf("Retrying to connect")
 	}
-	e.s1mmeClient = s1mme.NewAttacherClient(conn)
-	log.Printf("Established S1-MME connection with %s", e.mmeAddr)
 
 	e.uConn = v1.NewUPlaneConn(e.uAddr)
 	if err := e.uConn.EnableKernelGTP("gtp-enb", v1.RoleSGSN); err != nil {

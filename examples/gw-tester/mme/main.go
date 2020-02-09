@@ -20,7 +20,11 @@ func main() {
 	log.SetPrefix("[MME] ")
 
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(sigCh,
+		syscall.SIGINT,
+		syscall.SIGQUIT,
+		syscall.SIGTERM,
+		syscall.SIGHUP)
 
 	cfg, err := loadConfig(*configPath)
 	if err != nil {
@@ -42,12 +46,19 @@ func main() {
 		}
 	}()
 
+	defer cancel()
 	for {
 		select {
 		case sig := <-sigCh:
 			switch sig {
+			// kill -SIGINT XXXX or Ctrl+c
 			case syscall.SIGINT:
-				cancel()
+				fallthrough
+			// kill -SIGTERM XXXX
+			case syscall.SIGTERM:
+				fallthrough
+			// kill -SIGQUIT XXXX
+			case syscall.SIGQUIT:
 				return
 			case syscall.SIGHUP:
 				// reload config and attach/detach subscribers
